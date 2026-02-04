@@ -89,7 +89,6 @@ export async function fetchDiscoveryDocument(url: string): Promise<FetchDiscover
       };
     }
 
-    const contentType = response.headers.get("content-type") ?? "";
     let rawText: string;
     
     try {

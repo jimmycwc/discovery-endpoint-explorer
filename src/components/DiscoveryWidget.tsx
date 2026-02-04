@@ -47,7 +47,6 @@ const DiscoveryWidget: React.FC = () => {
           <FetchDiscovery
             discoveryPath={DEFAULT_OIDC_DISCOVERY_PATH}
             defaultPath={DEFAULT_OIDC_DISCOVERY_PATH}
-            tabLabel="OpenID Connect Discovery"
             placeholderBaseUrl="https://auth.example.com"
           />
         </div>
@@ -62,7 +61,6 @@ const DiscoveryWidget: React.FC = () => {
           <FetchDiscovery
             discoveryPath={DEFAULT_OAUTH_DISCOVERY_PATH}
             defaultPath={DEFAULT_OAUTH_DISCOVERY_PATH}
-            tabLabel="OAuth 2.0 Authorization Server Metadata (RFC 8414)"
             placeholderBaseUrl="https://auth.example.com"
           />
         </div>

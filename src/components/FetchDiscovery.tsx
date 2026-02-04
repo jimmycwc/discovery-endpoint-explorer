@@ -15,7 +15,6 @@ import {
 interface FetchDiscoveryProps {
   discoveryPath: string;
   defaultPath: string;
-  tabLabel: string;
   placeholderBaseUrl: string;
 }
 
@@ -146,7 +145,6 @@ const CheckIcon = () => (
 const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
   discoveryPath,
   defaultPath,
-  tabLabel,
   placeholderBaseUrl,
 }) => {
   const [urlInput, setUrlInput] = useState("");
