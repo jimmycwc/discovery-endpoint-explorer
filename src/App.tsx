@@ -19,11 +19,10 @@ const App: React.FC = () => {
             height: 100% !important;
             min-height: 100% !important;
           }
-          .discovery-widget > div:last-child {
-            height: calc(100% - 60px) !important;
-            min-height: calc(100% - 60px) !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
+          .discovery-widget > div:first-child {
+            height: 100% !important;
+            min-height: 100% !important;
+            overflow: auto !important;
           }
         `}
       </style>

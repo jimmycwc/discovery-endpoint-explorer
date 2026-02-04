@@ -227,6 +227,8 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
         setCapabilities(getCapabilities(result.data));
         setOtherFields(getOtherFields(result.data));
       }
+      setError("");
+      setErrorDetails("");
       setLastAttemptedUrl("");
     } else {
       setError(result.error ?? "Failed to fetch discovery document");
@@ -280,7 +282,8 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
       setKeyEndpoints(getKeyEndpoints(data));
       setCapabilities(getCapabilities(data));
       setOtherFields(getOtherFields(data));
-      setPastedJson("");
+      setError("");
+      setErrorDetails("");
       setLastAttemptedUrl("");
     } catch (err) {
       setPasteError(err instanceof Error ? err.message : "Invalid JSON");
@@ -515,7 +518,6 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
   }, [hasJwksUri, rawJson]);
 
   const viewTabStyle = (isActive: boolean) => ({
-    padding: "8px 16px",
     border: "none",
     borderBottom: isActive ? "2px solid rgb(11, 99, 233)" : "2px solid transparent",
     background: "none",
@@ -523,12 +525,13 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
     color: isActive ? "rgb(11, 99, 233)" : "#495057",
     cursor: "pointer",
     outline: "none",
-    fontSize: 14,
     fontFamily: "Inter, sans-serif",
+    whiteSpace: "nowrap" as const,
   });
 
   return (
     <div
+      className="discovery-layout"
       style={{
         fontFamily: "Inter, sans-serif",
         color: "#495057",
@@ -536,26 +539,59 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
         width: "100%",
         height: "100%",
         boxSizing: "border-box",
-        display: "flex",
-        flexDirection: "row",
         gap: 24,
-        minHeight: 0,
-        overflow: "hidden",
       }}
     >
-      {/* Left column: input & controls */}
-      <div
-        style={{
-          flex: "1 1 0",
-          minWidth: 0,
-          display: "flex",
-          flexDirection: "column",
-          gap: 0,
-          overflowY: "auto",
-          borderRight: "1px solid #e9ecef",
-          paddingRight: 24,
-        }}
-      >
+      <style>
+        {`
+          .discovery-layout {
+            display: flex;
+            flex-direction: row;
+            overflow: hidden;
+            min-height: 0;
+          }
+          .discovery-left-col {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            overflow-y: auto;
+            border-right: 1px solid #e9ecef;
+            padding-right: 24px;
+            border-bottom: none;
+            padding-bottom: 0;
+          }
+          .discovery-right-col {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+          }
+          @media (max-width: 768px) {
+            .discovery-layout {
+              flex-direction: column;
+              overflow: auto;
+            }
+            .discovery-left-col {
+              flex: none;
+              min-width: auto;
+              border-right: none;
+              border-bottom: 1px solid #e9ecef;
+              padding-right: 0;
+              padding-bottom: 24px;
+            }
+            .discovery-right-col {
+              flex: 1 1 0;
+              min-width: auto;
+              min-height: 200px;
+            }
+          }
+        `}
+      </style>
+      {/* Left column (or top on small screen): input & controls */}
+      <div className="discovery-left-col">
         <div style={{ marginBottom: 16 }}>
           <label style={styles.label}>Base URL or full discovery URL</label>
           <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
@@ -728,26 +764,96 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
         </div>
       </div>
 
-      {/* Right column: endpoints & results */}
-      <div
-        style={{
-          flex: "1 1 0",
-          minWidth: 0,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
+      {/* Right column (or bottom on small screen): endpoints & results */}
+      <div className="discovery-right-col">
         {rawJson ? (
           <>
-            <div style={{ borderBottom: "1px solid #dee2e6", flexShrink: 0 }}>
+            <style>
+              {`
+                .discovery-view-tabs {
+                  display: flex;
+                  flex-wrap: nowrap;
+                  flex-shrink: 0;
+                  min-width: 0;
+                  width: 100%;
+                  font-size: 14px;
+                  overflow-x: auto;
+                  -webkit-overflow-scrolling: touch;
+                  scrollbar-width: thin;
+                }
+                .discovery-view-tab {
+                  flex: 1 1 0;
+                  min-width: 80px;
+                  width: 100%;
+                  white-space: nowrap;
+                  text-align: center;
+                  font-size: 14px;
+                  padding: 8px 12px;
+                  flex-shrink: 0;
+                  box-sizing: border-box;
+                  overflow: hidden;
+                }
+                @media (max-width: 1200px) {
+                  .discovery-view-tab {
+                    white-space: normal !important;
+                    line-height: 1.3 !important;
+                  }
+                }
+                @media (max-width: 1024px) {
+                  .discovery-view-tab {
+                    font-size: 12px !important;
+                    padding: 6px 8px !important;
+                    white-space: normal !important;
+                    line-height: 1.3 !important;
+                  }
+                }
+                @media (max-width: 900px) {
+                  .discovery-view-tabs {
+                    overflow-x: hidden !important;
+                  }
+                  .discovery-view-tab {
+                    min-width: 0 !important;
+                    flex-shrink: 1 !important;
+                  }
+                }
+                @media (max-width: 768px) {
+                  .discovery-view-tabs {
+                    justify-content: space-between;
+                  }
+                  .discovery-view-tab {
+                    font-size: 11px !important;
+                    padding: 6px 4px !important;
+                    white-space: normal !important;
+                    line-height: 1.3 !important;
+                  }
+                }
+                @media (max-width: 640px) {
+                  .discovery-view-tab {
+                    font-size: 10px !important;
+                    padding: 5px 3px !important;
+                  }
+                }
+                @media (max-width: 480px) {
+                  .discovery-view-tab {
+                    font-size: 9px !important;
+                    padding: 5px 2px !important;
+                  }
+                }
+              `}
+            </style>
+            <div
+              className="discovery-view-tabs"
+              style={{ borderBottom: "1px solid #dee2e6" }}
+            >
               <button
+                className="discovery-view-tab"
                 style={viewTabStyle(viewMode === "endpoints")}
                 onClick={() => setViewMode("endpoints")}
               >
                 Key Endpoints
               </button>
               <button
+                className="discovery-view-tab"
                 style={viewTabStyle(viewMode === "capabilities")}
                 onClick={() => setViewMode("capabilities")}
               >
@@ -755,6 +861,7 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
               </button>
               {otherFields.length > 0 && (
                 <button
+                  className="discovery-view-tab"
                   style={viewTabStyle(viewMode === "others")}
                   onClick={() => setViewMode("others")}
                 >
@@ -762,6 +869,7 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
                 </button>
               )}
               <button
+                className="discovery-view-tab"
                 style={viewTabStyle(viewMode === "raw-json")}
                 onClick={() => setViewMode("raw-json")}
               >
@@ -769,6 +877,7 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
               </button>
               {hasJwksUri && (
                 <button
+                  className="discovery-view-tab"
                   style={viewTabStyle(viewMode === "jwks")}
                   onClick={() => setViewMode("jwks")}
                 >
@@ -778,72 +887,50 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
             </div>
 
             <div style={{ flex: 1, minHeight: 0, overflow: "auto", marginTop: 16 }}>
-              {viewMode === "endpoints" && discoveryObj && (
-                <div
-                  style={{
-                    marginBottom: 16,
-                    padding: 12,
-                    border: "1px solid #e9ecef",
-                    borderRadius: 6,
-                    background: "#fff",
-                    fontFamily: "Inter, sans-serif",
-                    color: "#495057",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: 12,
-                      marginBottom: 10,
-                    }}
-                  >
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>Validation</div>
-                    {requiredMissing.length === 0 ? (
-                      <StatusPill v={{ status: "pass", message: "All required fields present" }} />
-                    ) : (
-                      <StatusPill v={{ status: "error", message: "Missing required fields" }} />
-                    )}
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: 13 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <strong>Issuer is valid</strong>
-                      <StatusPill v={endpointValidation["issuer"]} compact />
-                      <span style={{ color: "#6c757d" }}>{endpointValidation["issuer"]?.message ?? ""}</span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <strong>Endpoints are absolute URLs (HTTPS)</strong>
-                      {(() => {
-                        const vals = keyEndpoints
-                          .filter((e) => e.key !== "issuer")
-                          .map((e) => endpointValidation[e.key]?.status)
-                          .filter((s): s is ValidationStatus => !!s);
-                        const hasError = vals.includes("error");
-                        const hasPending = vals.includes("pending");
-                        const status: ValidationStatus = hasError ? "error" : hasPending ? "pending" : "pass";
-                        return <StatusPill v={{ status }} compact />;
-                      })()}
-                    </div>
-                    {hasJwksUri && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                        <strong>jwks_uri returns valid JSON with keys[]</strong>
-                        <StatusPill v={jwksContentValidation ?? { status: "pending" }} compact />
-                        <span style={{ color: "#6c757d" }}>{jwksContentValidation?.message ?? ""}</span>
+              {viewMode === "endpoints" && (
+                <>
+                  {requiredMissing.length > 0 && (
+                    <div
+                      style={{
+                        marginBottom: 12,
+                        padding: "10px 14px",
+                        borderRadius: 6,
+                        border: "1px solid #f8d7da",
+                        background: "#f8d7da",
+                        color: "#721c24",
+                        fontSize: 13,
+                      }}
+                    >
+                      <strong>These required fields are missing:</strong>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 8,
+                          alignItems: "center",
+                          marginTop: 8,
+                        }}
+                      >
+                        {requiredMissing.map((key) => (
+                          <span
+                            key={key}
+                            style={{
+                              display: "inline-block",
+                              padding: "6px 12px",
+                              borderRadius: 6,
+                              backgroundColor: "#fce8ea",
+                              color: "#a94442",
+                              fontSize: 13,
+                              fontFamily: "Inter, sans-serif",
+                            }}
+                          >
+                            {key}
+                          </span>
+                        ))}
                       </div>
-                    )}
-                    {requiredMissing.length > 0 && (
-                      <div style={{ marginTop: 4 }}>
-                        <strong>These required fields are missing:</strong>{" "}
-                        <span style={{ color: "#721c24" }}>{requiredMissing.join(", ")}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {viewMode === "endpoints" && keyEndpoints.length > 0 && (
+                    </div>
+                  )}
+                  {keyEndpoints.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                   {keyEndpoints.map((ep) => (
                     <div key={ep.key} style={{ ...styles.endpointCard, position: "relative" }}>
@@ -873,6 +960,8 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
                     </div>
                   ))}
                 </div>
+                  )}
+                </>
               )}
 
               {viewMode === "others" && otherFields.length === 0 && (
@@ -1206,10 +1295,7 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
         ) : (
           <div
             style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              padding: "12px 0 0 0",
               color: "#adb5bd",
               fontSize: 14,
               fontFamily: "Inter, sans-serif",
