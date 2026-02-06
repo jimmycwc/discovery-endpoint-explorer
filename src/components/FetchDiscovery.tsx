@@ -20,6 +20,88 @@ interface FetchDiscoveryProps {
 
 type ViewMode = "endpoints" | "capabilities" | "others" | "raw-json" | "jwks";
 
+const KEY_ENDPOINT_TOOLTIPS: Record<string, { description: string; required: boolean }> = {
+  issuer: {
+    description: "The issuer identifier. URL that identifies the authorization server.",
+    required: true,
+  },
+  authorization_endpoint: {
+    description: "URL of the authorization server's authorization endpoint.",
+    required: true,
+  },
+  token_endpoint: {
+    description: "URL of the authorization server's token endpoint.",
+    required: true,
+  },
+  userinfo_endpoint: {
+    description: "URL of the UserInfo endpoint (OIDC). Returns claims about the authenticated user.",
+    required: false,
+  },
+  jwks_uri: {
+    description: "URL of the server's JSON Web Key Set (JWKS) document.",
+    required: true,
+  },
+  registration_endpoint: {
+    description: "URL of the dynamic client registration endpoint.",
+    required: false,
+  },
+  revocation_endpoint: {
+    description: "URL of the token revocation endpoint.",
+    required: false,
+  },
+  introspection_endpoint: {
+    description: "URL of the token introspection endpoint.",
+    required: false,
+  },
+  end_session_endpoint: {
+    description: "URL of the end session (logout) endpoint (OIDC).",
+    required: false,
+  },
+};
+
+const CAPABILITY_TOOLTIPS: Record<string, { description: string; required: boolean }> = {
+  claims_supported: {
+    description: "JSON array of claim names that the authorization server may supply in the ID token or UserInfo response.",
+    required: false,
+  },
+  scopes_supported: {
+    description: "JSON array of OAuth 2.0 scope values supported by the authorization server.",
+    required: false,
+  },
+  code_challenge_methods_supported: {
+    description: "JSON array of PKCE code challenge methods supported (e.g. S256, plain).",
+    required: false,
+  },
+  response_types_supported: {
+    description: "JSON array of OAuth 2.0 response_type values supported (e.g. code, token).",
+    required: true,
+  },
+  dpop_signing_alg_values_supported: {
+    description: "JSON array of JWS signing algorithms supported for DPoP proof JWTs.",
+    required: false,
+  },
+  grant_types_supported: {
+    description: "JSON array of OAuth 2.0 grant types supported (e.g. authorization_code, refresh_token).",
+    required: false,
+  },
+  id_token_signing_alg_values_supported: {
+    description: "JSON array of JWS signing algorithms supported for the ID token.",
+    required: true,
+  },
+  response_modes_supported: {
+    description: "JSON array of response_mode values supported (e.g. query, fragment).",
+    required: false,
+  },
+  subject_types_supported: {
+    description: "JSON array of subject identifier types supported (e.g. public, pairwise).",
+    required: true,
+  },
+  token_endpoint_auth_methods_supported: {
+    description: "JSON array of client authentication methods supported at the token endpoint.",
+    required: false,
+  },
+};
+
 const styles = {
   input: {
     width: "100%",
@@ -159,6 +241,10 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
   const [copySuccess, setCopySuccess] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [copiedJwkIndex, setCopiedJwkIndex] = useState<number | null>(null);
+  const [tooltipKey, setTooltipKey] = useState<string | null>(null);
+  const [tooltipCapKey, setTooltipCapKey] = useState<string | null>(null);
+  const [inputMode, setInputMode] = useState<"url" | "json">("url");
+  const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("endpoints");
   const [jwksData, setJwksData] = useState<unknown>(null);
   const [jwksError, setJwksError] = useState("");
@@ -183,8 +269,9 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
     }
   }, [rawJson]);
 
-  const handleFetch = async () => {
-    let urlToFetch = urlInput.trim();
+  const handleFetch = async (overrideUrl?: string) => {
+    setHasAttemptedFetch(true);
+    let urlToFetch = (overrideUrl ?? urlInput).trim();
     if (!urlToFetch) {
       setError("Please enter a base URL (e.g. https://auth.example.com) or a full discovery URL.");
       setErrorDetails("");
@@ -200,9 +287,15 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
         const u = new URL(urlToFetch);
         if (u.pathname === "" || u.pathname === "/") {
           urlToFetch = buildDiscoveryUrl(urlToFetch, resolvedPath);
+          if (!overrideUrl) {
+            setUrlInput(urlToFetch);
+          }
         }
       } catch {
         urlToFetch = buildDiscoveryUrl(urlToFetch, resolvedPath);
+        if (!overrideUrl) {
+          setUrlInput(urlToFetch);
+        }
       }
     }
 
@@ -460,37 +553,6 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
     return res;
   }, [discoveryObj]);
 
-  const statusPillStyle = (status: ValidationStatus) => {
-    if (status === "pass") return { background: "#d4edda", color: "#155724", border: "1px solid #c3e6cb" };
-    if (status === "pending") return { background: "#e2e3e5", color: "#383d41", border: "1px solid #d6d8db" };
-    return { background: "#f8d7da", color: "#721c24", border: "1px solid #f5c6cb" };
-  };
-
-  const StatusPill: React.FC<{ v?: FieldValidation; compact?: boolean }> = ({ v, compact }) => {
-    if (!v) return null;
-    return (
-      <span
-        title={v.message}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: compact ? "1px 5px" : "2px 7px",
-          borderRadius: 999,
-          fontSize: 10,
-          fontWeight: 600,
-          fontFamily: "Inter, sans-serif",
-          letterSpacing: 0.2,
-          ...statusPillStyle(v.status),
-          userSelect: "none",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {v.status.toUpperCase()}
-      </span>
-    );
-  };
-
   useEffect(() => {
     if (!hasJwksUri && viewMode === "jwks") {
       setViewMode("endpoints");
@@ -546,89 +608,166 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
         {`
           .discovery-layout {
             display: flex;
-            flex-direction: row;
-            overflow: hidden;
+            flex-direction: column;
+            overflow: auto;
             min-height: 0;
           }
           .discovery-left-col {
-            flex: 1 1 0;
-            min-width: 0;
+            flex: none;
             display: flex;
             flex-direction: column;
             gap: 0;
-            overflow-y: auto;
-            border-right: 1px solid #e9ecef;
-            padding-right: 24px;
-            border-bottom: none;
-            padding-bottom: 0;
+            border-right: none;
+            border-bottom: 1px solid #e9ecef;
+            padding-right: 0;
+            padding-bottom: 24px;
           }
           .discovery-right-col {
-            flex: 1 1 0;
-            min-width: 0;
+            flex: none;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-          }
-          @media (max-width: 768px) {
-            .discovery-layout {
-              flex-direction: column;
-              overflow: auto;
-            }
-            .discovery-left-col {
-              flex: none;
-              min-width: auto;
-              border-right: none;
-              border-bottom: 1px solid #e9ecef;
-              padding-right: 0;
-              padding-bottom: 24px;
-            }
-            .discovery-right-col {
-              flex: 1 1 0;
-              min-width: auto;
-              min-height: 200px;
-            }
           }
         `}
       </style>
-      {/* Left column (or top on small screen): input & controls */}
-      <div className="discovery-left-col">
-        <div style={{ marginBottom: 16 }}>
-          <label style={styles.label}>Base URL or full discovery URL</label>
-          <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
-            <input
-              type="url"
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              placeholder={placeholderBaseUrl + resolvedPath}
-              style={{ ...styles.input, flex: 1, minWidth: 0 }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !isLoading) {
-                  handleFetch();
-                }
-              }}
-            />
-            <button
-              onClick={handleFetch}
-              disabled={isLoading}
+      {/* Top section: input & controls */}
+      <div
+        className="discovery-left-col"
+        style={rawJson ? undefined : { borderBottom: "none" }}
+      >
+        <div
+          style={{
+            marginBottom: 16,
+            padding: 12,
+            backgroundColor: "#f8f9fa",
+            border: "1px solid #dee2e6",
+            borderRadius: 6,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "Inter, sans-serif",
+              fontSize: 12,
+              fontWeight: 600,
+              color: "#6c757d",
+              marginBottom: 10,
+              textTransform: "uppercase" as const,
+              letterSpacing: "0.5px",
+            }}
+          >
+            Input
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "stretch",
+              gap: 12,
+              fontFamily: "Inter, sans-serif",
+              fontSize: 14,
+              flexWrap: "wrap",
+            }}
+          >
+            <label
               style={{
-                ...styles.button,
-                ...(isLoading ? styles.buttonDisabled : {}),
-                flexShrink: 0,
-                padding: "0 16px",
-                boxSizing: "border-box",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
+                gap: 8,
+                cursor: "pointer",
+                color: "#495057",
+                padding: "12px 14px",
+                borderRadius: 6,
+                border:
+                  inputMode === "url" ? "2px solid rgb(11, 99, 233)" : "1px solid #dee2e6",
+                background: inputMode === "url" ? "rgba(11, 99, 233, 0.10)" : "#fff",
+                flex: "0 0 220px",
+                userSelect: "none",
               }}
             >
-              {isLoading ? "Fetching…" : "Fetch"}
-            </button>
+              <input
+                type="radio"
+                name="inputMode"
+                checked={inputMode === "url"}
+                onChange={() => setInputMode("url")}
+                style={{
+                  cursor: "pointer",
+                  accentColor: "rgb(11, 99, 233)",
+                  transform: "scale(1.15)",
+                }}
+              />
+              Base URL
+            </label>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                cursor: "pointer",
+                color: "#495057",
+                padding: "12px 14px",
+                borderRadius: 6,
+                border:
+                  inputMode === "json" ? "2px solid rgb(11, 99, 233)" : "1px solid #dee2e6",
+                background: inputMode === "json" ? "rgba(11, 99, 233, 0.10)" : "#fff",
+                flex: "0 0 220px",
+                userSelect: "none",
+              }}
+            >
+              <input
+                type="radio"
+                name="inputMode"
+                checked={inputMode === "json"}
+                onChange={() => setInputMode("json")}
+                style={{
+                  cursor: "pointer",
+                  accentColor: "rgb(11, 99, 233)",
+                  transform: "scale(1.15)",
+                }}
+              />
+              JSON
+            </label>
           </div>
         </div>
 
-        {error && (
-          <div style={{ ...styles.error, marginTop: 16, marginBottom: 16 }}>
-            <strong>Error:</strong> {error}
+        {inputMode === "url" && (
+          <div style={{ marginBottom: 16 }}>
+            <label style={styles.label}>Base URL or full discovery URL</label>
+            <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+              <input
+                type="url"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                placeholder={placeholderBaseUrl + resolvedPath}
+                style={{ ...styles.input, flex: 1, minWidth: 0 }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !isLoading) {
+                    handleFetch();
+                  }
+                }}
+              />
+              <button
+                onClick={() => handleFetch()}
+                disabled={isLoading}
+                style={{
+                  ...styles.button,
+                  ...(isLoading ? styles.buttonDisabled : {}),
+                  flexShrink: 0,
+                  padding: "0 16px",
+                  boxSizing: "border-box",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {isLoading ? "Fetching…" : "Fetch"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {inputMode === "url" && hasAttemptedFetch && error && (
+          <div style={{ ...styles.error, marginTop: 16, marginBottom: 16, whiteSpace: "pre-line" as const }}>
+            <strong>Error:</strong>
+            {"\n"}
+            {error}
             {errorDetails && (
               <div style={{ marginTop: 8, fontSize: 13, opacity: 0.9 }}>
                 <strong>Details:</strong>
@@ -718,53 +857,42 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
           </div>
         )}
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            marginBottom: 16,
-          }}
-        >
-          <div style={{ flex: 1, height: 1, backgroundColor: "#e9ecef" }} />
-          <span style={{ fontSize: 13, color: "#6c757d", fontWeight: 500 }}>or</span>
-          <div style={{ flex: 1, height: 1, backgroundColor: "#e9ecef" }} />
-        </div>
-
-        <div>
-          <label style={styles.label}>Paste Discovery Document JSON</label>
-          <textarea
-            value={pastedJson}
-            onChange={(e) => setPastedJson(e.target.value)}
-            placeholder='Paste the JSON from the discovery endpoint here...'
-            style={{
-              ...styles.input,
-              minHeight: 200,
-              fontFamily: "monospace",
-              fontSize: 13,
-              resize: "vertical",
-            }}
-          />
-          <button
-            onClick={handlePasteJson}
-            disabled={!pastedJson.trim()}
-            style={{
-              ...styles.button,
-              marginTop: 8,
-              ...((!pastedJson.trim()) ? styles.buttonDisabled : {}),
-            }}
-          >
-            Parse JSON
-          </button>
-          {pasteError && (
-            <div style={{ ...styles.error, marginTop: 12 }}>
-              <strong>Error:</strong> {pasteError}
-            </div>
-          )}
-        </div>
+        {inputMode === "json" && (
+          <div>
+            <label style={styles.label}>Paste Discovery Document JSON</label>
+            <textarea
+              value={pastedJson}
+              onChange={(e) => setPastedJson(e.target.value)}
+              placeholder='Paste the JSON from the discovery endpoint here...'
+              style={{
+                ...styles.input,
+                minHeight: 200,
+                fontFamily: "monospace",
+                fontSize: 13,
+                resize: "vertical",
+              }}
+            />
+            <button
+              onClick={handlePasteJson}
+              disabled={!pastedJson.trim()}
+              style={{
+                ...styles.button,
+                marginTop: 8,
+                ...((!pastedJson.trim()) ? styles.buttonDisabled : {}),
+              }}
+            >
+              Parse JSON
+            </button>
+            {pasteError && (
+              <div style={{ ...styles.error, marginTop: 12 }}>
+                <strong>Error:</strong> {pasteError}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Right column (or bottom on small screen): endpoints & results */}
+      {/* Bottom section: endpoints & results */}
       <div className="discovery-right-col">
         {rawJson ? (
           <>
@@ -886,7 +1014,7 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
               )}
             </div>
 
-            <div style={{ flex: 1, minHeight: 0, overflow: "auto", marginTop: 16 }}>
+            <div style={{ marginTop: 16 }}>
               {viewMode === "endpoints" && (
                 <>
                   {requiredMissing.length > 0 && (
@@ -943,8 +1071,90 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
                           paddingRight: 44,
                         }}
                       >
-                        <span>{ep.label}</span>
-                        <StatusPill v={endpointValidation[ep.key]} compact />
+                        <span
+                          style={{ position: "relative" as const, display: "inline-block" }}
+                          onMouseEnter={() => KEY_ENDPOINT_TOOLTIPS[ep.key] && setTooltipKey(ep.key)}
+                          onMouseLeave={() => setTooltipKey(null)}
+                        >
+                          <span
+                            style={
+                              KEY_ENDPOINT_TOOLTIPS[ep.key]
+                                ? {
+                                    cursor: "help" as const,
+                                    borderBottom: "1px dotted #0B63E9",
+                                  }
+                                : undefined
+                            }
+                          >
+                            {ep.label}
+                          </span>
+                          {KEY_ENDPOINT_TOOLTIPS[ep.key] && tooltipKey === ep.key && (
+                            <div
+                              style={{
+                                position: "absolute",
+                                bottom: "100%",
+                                left: 0,
+                                marginBottom: 8,
+                                padding: "8px 12px",
+                                backgroundColor: "#f0f8ff",
+                                border: "2px solid #0B63E9",
+                                borderRadius: 6,
+                                color: "#0B63E9",
+                                fontSize: 13,
+                                fontWeight: 500,
+                                fontFamily: "Inter, sans-serif",
+                                lineHeight: 1.4,
+                                whiteSpace: "normal",
+                                minWidth: 320,
+                                maxWidth: 480,
+                                boxShadow: "0 4px 12px rgba(11, 99, 233, 0.15)",
+                                zIndex: 1000,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  padding: "2px 8px",
+                                  borderRadius: 4,
+                                  backgroundColor: KEY_ENDPOINT_TOOLTIPS[ep.key].required ? "#d4edda" : "#e9ecef",
+                                  color: KEY_ENDPOINT_TOOLTIPS[ep.key].required ? "#155724" : "#495057",
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  marginBottom: 6,
+                                }}
+                              >
+                                {KEY_ENDPOINT_TOOLTIPS[ep.key].required ? "Required" : "Optional"}
+                              </span>
+                              <div style={{ marginTop: 4 }}>
+                                {KEY_ENDPOINT_TOOLTIPS[ep.key].description}
+                              </div>
+                              <span
+                                style={{
+                                  position: "absolute",
+                                  top: "100%",
+                                  left: 15,
+                                  width: 0,
+                                  height: 0,
+                                  borderLeft: "8px solid transparent",
+                                  borderRight: "8px solid transparent",
+                                  borderTop: "8px solid #0B63E9",
+                                }}
+                              />
+                              <span
+                                style={{
+                                  position: "absolute",
+                                  top: "100%",
+                                  left: 17,
+                                  width: 0,
+                                  height: 0,
+                                  borderLeft: "6px solid transparent",
+                                  borderRight: "6px solid transparent",
+                                  borderTop: "6px solid #f0f8ff",
+                                }}
+                              />
+                            </div>
+                          )}
+                        </span>
                       </div>
                       <div style={styles.endpointValue}>{ep.value}</div>
                       <button
@@ -1041,8 +1251,90 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
                             marginBottom: 12,
                           }}
                         >
-                          <span>{cap.label}</span>
-                          <StatusPill v={capabilityValidation[cap.key]} compact />
+                          <span
+                            style={{ position: "relative" as const, display: "inline-block" }}
+                            onMouseEnter={() => CAPABILITY_TOOLTIPS[cap.key] && setTooltipCapKey(cap.key)}
+                            onMouseLeave={() => setTooltipCapKey(null)}
+                          >
+                            <span
+                              style={
+                                CAPABILITY_TOOLTIPS[cap.key]
+                                  ? {
+                                      cursor: "help" as const,
+                                      borderBottom: "1px dotted #0B63E9",
+                                    }
+                                  : undefined
+                              }
+                            >
+                              {cap.label}
+                            </span>
+                            {CAPABILITY_TOOLTIPS[cap.key] && tooltipCapKey === cap.key && (
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  bottom: "100%",
+                                  left: 0,
+                                  marginBottom: 8,
+                                  padding: "8px 12px",
+                                  backgroundColor: "#f0f8ff",
+                                  border: "2px solid #0B63E9",
+                                  borderRadius: 6,
+                                  color: "#0B63E9",
+                                  fontSize: 13,
+                                  fontWeight: 500,
+                                  fontFamily: "Inter, sans-serif",
+                                  lineHeight: 1.4,
+                                  whiteSpace: "normal",
+                                  minWidth: 320,
+                                  maxWidth: 480,
+                                  boxShadow: "0 4px 12px rgba(11, 99, 233, 0.15)",
+                                  zIndex: 1000,
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    padding: "2px 8px",
+                                    borderRadius: 4,
+                                    backgroundColor: CAPABILITY_TOOLTIPS[cap.key].required ? "#d4edda" : "#e9ecef",
+                                    color: CAPABILITY_TOOLTIPS[cap.key].required ? "#155724" : "#495057",
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    marginBottom: 6,
+                                  }}
+                                >
+                                  {CAPABILITY_TOOLTIPS[cap.key].required ? "Required" : "Optional"}
+                                </span>
+                                <div style={{ marginTop: 4 }}>
+                                  {CAPABILITY_TOOLTIPS[cap.key].description}
+                                </div>
+                                <span
+                                  style={{
+                                    position: "absolute",
+                                    top: "100%",
+                                    left: 15,
+                                    width: 0,
+                                    height: 0,
+                                    borderLeft: "8px solid transparent",
+                                    borderRight: "8px solid transparent",
+                                    borderTop: "8px solid #0B63E9",
+                                  }}
+                                />
+                                <span
+                                  style={{
+                                    position: "absolute",
+                                    top: "100%",
+                                    left: 17,
+                                    width: 0,
+                                    height: 0,
+                                    borderLeft: "6px solid transparent",
+                                    borderRight: "6px solid transparent",
+                                    borderTop: "6px solid #f0f8ff",
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </span>
                         </div>
                         <div
                           style={{
@@ -1292,18 +1584,7 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
               )}
             </div>
           </>
-        ) : (
-          <div
-            style={{
-              padding: "12px 0 0 0",
-              color: "#adb5bd",
-              fontSize: 14,
-              fontFamily: "Inter, sans-serif",
-            }}
-          >
-            Enter a URL and click Fetch, or paste JSON to view endpoints.
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

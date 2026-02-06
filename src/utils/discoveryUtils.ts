@@ -80,12 +80,19 @@ export async function fetchDiscoveryDocument(url: string): Promise<FetchDiscover
       } catch {
         // Ignore if we can't get the body
       }
-      
+
+      const status = response.status;
+      const statusText = response.statusText;
+      const errorMessage =
+        status === 502
+          ? "Cannot reach the server.\nThe site may not exist or is temporarily unavailable."
+          : `HTTP ${status} ${statusText}`;
+
       return {
         success: false,
-        error: `HTTP ${response.status} ${response.statusText}`,
+        error: errorMessage,
         errorDetails: errorDetails || undefined,
-        statusCode: response.status,
+        statusCode: status,
       };
     }
 
