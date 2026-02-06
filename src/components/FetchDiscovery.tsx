@@ -102,6 +102,57 @@ const CAPABILITY_TOOLTIPS: Record<string, { description: string; required: boole
   },
 };
 
+const OTHER_FIELD_TOOLTIPS: Record<string, { description: string }> = {
+  device_authorization_endpoint: {
+    description: "URL of the authorization server's device authorization endpoint (RFC 8628).",
+  },
+  service_documentation: {
+    description: "URL of a human-readable document describing the authorization server.",
+  },
+  revocation_endpoint_auth_methods_supported: {
+    description: "JSON array of client authentication methods supported at the revocation endpoint.",
+  },
+  introspection_endpoint_auth_methods_supported: {
+    description: "JSON array of client authentication methods supported at the introspection endpoint.",
+  },
+  request_object_signing_alg_values_supported: {
+    description: "JSON array of JWS signing algorithms supported for request objects.",
+  },
+  request_object_encryption_alg_values_supported: {
+    description: "JSON array of JWE encryption algorithms supported for request objects.",
+  },
+  request_object_encryption_enc_values_supported: {
+    description: "JSON array of JWE encryption methods supported for request objects.",
+  },
+  require_request_uri_registration: {
+    description: "Boolean indicating whether request_uri values must be pre-registered.",
+  },
+  op_policy_uri: {
+    description: "URL of the authorization server's policy document.",
+  },
+  op_tos_uri: {
+    description: "URL of the authorization server's terms of service document.",
+  },
+  check_session_iframe: {
+    description: "URL of an iframe for session state checking (OIDC).",
+  },
+  backchannel_logout_supported: {
+    description: "Boolean indicating whether back-channel logout is supported.",
+  },
+  frontchannel_logout_supported: {
+    description: "Boolean indicating whether front-channel logout is supported.",
+  },
+  backchannel_logout_session_supported: {
+    description: "Boolean indicating whether a session identifier is included in back-channel logout.",
+  },
+  acr_values_supported: {
+    description: "JSON array of Authentication Context Class Reference values supported.",
+  },
+  ui_locales_supported: {
+    description: "JSON array of UI locale values supported for the login and consent UI.",
+  },
+};
+
 const styles = {
   input: {
     width: "100%",
@@ -243,6 +294,7 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
   const [copiedJwkIndex, setCopiedJwkIndex] = useState<number | null>(null);
   const [tooltipKey, setTooltipKey] = useState<string | null>(null);
   const [tooltipCapKey, setTooltipCapKey] = useState<string | null>(null);
+  const [tooltipOtherKey, setTooltipOtherKey] = useState<string | null>(null);
   const [inputMode, setInputMode] = useState<"url" | "json">("url");
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("endpoints");
@@ -1061,7 +1113,100 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
                         key={field.key}
                         style={{ ...styles.endpointCard, position: "relative" }}
                       >
-                        <div style={styles.endpointLabel}>{field.label}</div>
+                        <div
+                          style={{
+                            ...styles.endpointLabel,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            paddingRight: 44,
+                          }}
+                        >
+                          <span
+                            style={{ position: "relative" as const, display: "inline-block" }}
+                            onMouseEnter={() => OTHER_FIELD_TOOLTIPS[field.key] && setTooltipOtherKey(field.key)}
+                            onMouseLeave={() => setTooltipOtherKey(null)}
+                          >
+                            <span
+                              style={
+                                OTHER_FIELD_TOOLTIPS[field.key]
+                                  ? {
+                                      cursor: "help" as const,
+                                      borderBottom: "1px dotted #0B63E9",
+                                    }
+                                  : undefined
+                              }
+                            >
+                              {field.label}
+                            </span>
+                            {OTHER_FIELD_TOOLTIPS[field.key] && tooltipOtherKey === field.key && (
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  bottom: "100%",
+                                  left: 0,
+                                  marginBottom: 8,
+                                  padding: "8px 12px",
+                                  backgroundColor: "#f0f8ff",
+                                  border: "2px solid #0B63E9",
+                                  borderRadius: 6,
+                                  color: "#0B63E9",
+                                  fontSize: 13,
+                                  fontWeight: 500,
+                                  fontFamily: "Inter, sans-serif",
+                                  lineHeight: 1.4,
+                                  whiteSpace: "normal",
+                                  minWidth: 320,
+                                  maxWidth: 480,
+                                  boxShadow: "0 4px 12px rgba(11, 99, 233, 0.15)",
+                                  zIndex: 1000,
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    padding: "2px 8px",
+                                    borderRadius: 4,
+                                    backgroundColor: "#e9ecef",
+                                    color: "#495057",
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    marginBottom: 6,
+                                  }}
+                                >
+                                  Optional
+                                </span>
+                                <div style={{ marginTop: 4 }}>
+                                  {OTHER_FIELD_TOOLTIPS[field.key].description}
+                                </div>
+                                <span
+                                  style={{
+                                    position: "absolute",
+                                    top: "100%",
+                                    left: 15,
+                                    width: 0,
+                                    height: 0,
+                                    borderLeft: "8px solid transparent",
+                                    borderRight: "8px solid transparent",
+                                    borderTop: "8px solid #0B63E9",
+                                  }}
+                                />
+                                <span
+                                  style={{
+                                    position: "absolute",
+                                    top: "100%",
+                                    left: 17,
+                                    width: 0,
+                                    height: 0,
+                                    borderLeft: "6px solid transparent",
+                                    borderRight: "6px solid transparent",
+                                    borderTop: "6px solid #f0f8ff",
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </span>
+                        </div>
                         <div style={{ ...styles.endpointValue, whiteSpace: "pre-wrap" as const }}>
                           {field.value}
                         </div>
