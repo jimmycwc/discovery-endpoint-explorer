@@ -598,99 +598,6 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
         className="discovery-left-col"
         style={rawJson ? undefined : { borderBottom: "none" }}
       >
-        <div
-          style={{
-            marginBottom: 16,
-            padding: 12,
-            backgroundColor: "#f8f9fa",
-            border: "1px solid #dee2e6",
-            borderRadius: 6,
-          }}
-        >
-          <div
-            style={{
-              fontFamily: "Inter, sans-serif",
-              fontSize: 12,
-              fontWeight: 600,
-              color: "#6c757d",
-              marginBottom: 10,
-              textTransform: "uppercase" as const,
-              letterSpacing: "0.5px",
-            }}
-          >
-            Input
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "stretch",
-              gap: 12,
-              fontFamily: "Inter, sans-serif",
-              fontSize: 14,
-              flexWrap: "wrap",
-            }}
-          >
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                cursor: "pointer",
-                color: "#495057",
-                padding: "12px 14px",
-                borderRadius: 6,
-                border:
-                  inputMode === "url" ? "2px solid rgb(11, 99, 233)" : "1px solid #dee2e6",
-                background: inputMode === "url" ? "rgba(11, 99, 233, 0.10)" : "#fff",
-                flex: "0 0 220px",
-                userSelect: "none",
-              }}
-            >
-              <input
-                type="radio"
-                name="inputMode"
-                checked={inputMode === "url"}
-                onChange={() => setInputMode("url")}
-                style={{
-                  cursor: "pointer",
-                  accentColor: "rgb(11, 99, 233)",
-                  transform: "scale(1.15)",
-                }}
-              />
-              Base URL
-            </label>
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                cursor: "pointer",
-                color: "#495057",
-                padding: "12px 14px",
-                borderRadius: 6,
-                border:
-                  inputMode === "json" ? "2px solid rgb(11, 99, 233)" : "1px solid #dee2e6",
-                background: inputMode === "json" ? "rgba(11, 99, 233, 0.10)" : "#fff",
-                flex: "0 0 220px",
-                userSelect: "none",
-              }}
-            >
-              <input
-                type="radio"
-                name="inputMode"
-                checked={inputMode === "json"}
-                onChange={() => setInputMode("json")}
-                style={{
-                  cursor: "pointer",
-                  accentColor: "rgb(11, 99, 233)",
-                  transform: "scale(1.15)",
-                }}
-              />
-              JSON
-            </label>
-          </div>
-        </div>
-
         {inputMode === "url" && (
           <div style={{ marginBottom: 16 }}>
             <label style={styles.label}>Base URL or full discovery URL</label>
@@ -724,6 +631,87 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
                 {isLoading ? "Fetching…" : "Fetch"}
               </button>
             </div>
+          </div>
+        )}
+
+        {inputMode === "url" && (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: 8,
+              backgroundColor: "#f8f9fa",
+              border: "1px solid #dee2e6",
+              borderRadius: 6,
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              flexWrap: "wrap",
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#6c757d",
+                textTransform: "uppercase" as const,
+                letterSpacing: "0.5px",
+              }}
+            >
+              Input
+            </span>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                cursor: "pointer",
+                color: "#495057",
+                fontSize: 14,
+                userSelect: "none",
+              }}
+            >
+              <input
+                type="radio"
+                name="inputMode"
+                checked={inputMode === "url"}
+                onChange={() => setInputMode("url")}
+                style={{
+                  cursor: "pointer",
+                  accentColor: "rgb(11, 99, 233)",
+                  transform: "scale(0.85)",
+                  width: 12,
+                  height: 12,
+                }}
+              />
+              Base URL
+            </label>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                cursor: "pointer",
+                color: "#495057",
+                fontSize: 14,
+                userSelect: "none",
+              }}
+            >
+              <input
+                type="radio"
+                name="inputMode"
+                checked={inputMode === "json"}
+                onChange={() => setInputMode("json")}
+                style={{
+                  cursor: "pointer",
+                  accentColor: "rgb(11, 99, 233)",
+                  transform: "scale(0.85)",
+                  width: 12,
+                  height: 12,
+                }}
+              />
+              JSON
+            </label>
           </div>
         )}
 
@@ -806,6 +794,85 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
                 <strong>Error:</strong> {pasteError}
               </div>
             )}
+            <div
+              style={{
+                marginTop: 16,
+                marginBottom: 0,
+                padding: 8,
+                backgroundColor: "#f8f9fa",
+                border: "1px solid #dee2e6",
+                borderRadius: 6,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                flexWrap: "wrap",
+                fontFamily: "Inter, sans-serif",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#6c757d",
+                  textTransform: "uppercase" as const,
+                  letterSpacing: "0.5px",
+                }}
+              >
+                Input
+              </span>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  cursor: "pointer",
+                  color: "#495057",
+                  fontSize: 14,
+                  userSelect: "none",
+                }}
+              >
+                <input
+                  type="radio"
+                  name="inputMode"
+                  checked={inputMode === "url"}
+                  onChange={() => setInputMode("url")}
+                  style={{
+                    cursor: "pointer",
+                    accentColor: "rgb(11, 99, 233)",
+                    transform: "scale(0.85)",
+                    width: 12,
+                    height: 12,
+                  }}
+                />
+                Base URL
+              </label>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  cursor: "pointer",
+                  color: "#495057",
+                  fontSize: 14,
+                  userSelect: "none",
+                }}
+              >
+                <input
+                  type="radio"
+                  name="inputMode"
+                  checked={inputMode === "json"}
+                  onChange={() => setInputMode("json")}
+                  style={{
+                    cursor: "pointer",
+                    accentColor: "rgb(11, 99, 233)",
+                    transform: "scale(0.85)",
+                    width: 12,
+                    height: 12,
+                  }}
+                />
+                JSON
+              </label>
+            </div>
           </div>
         )}
       </div>
