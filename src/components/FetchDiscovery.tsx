@@ -433,9 +433,6 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
     }
   }, [rawJson]);
 
-  type ValidationStatus = "pass" | "error" | "pending";
-  type FieldValidation = { status: ValidationStatus; message?: string };
-
   const discoveryObj = useMemo(() => {
     if (!rawJson) return null;
     try {
@@ -466,91 +463,6 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
       }
     }
     return missing;
-  }, [discoveryObj]);
-
-  const jwksContentValidation: FieldValidation | null = useMemo(() => {
-    if (!hasJwksUri) return null;
-    if (isLoadingJwks) return { status: "pending", message: "Checking JWKS…" };
-    if (jwksError) return { status: "error", message: jwksError };
-    if (!jwksData) return { status: "pending", message: "JWKS not fetched yet" };
-    if (!jwksData || typeof jwksData !== "object") return { status: "error", message: "JWKS is not an object" };
-    const keys = (jwksData as { keys?: unknown }).keys;
-    if (!Array.isArray(keys)) return { status: "error", message: "JWKS missing keys[]" };
-    return { status: "pass", message: `JWKS keys[]: ${keys.length}` };
-  }, [hasJwksUri, isLoadingJwks, jwksError, jwksData]);
-
-  const endpointValidation = useMemo(() => {
-    const res: Record<string, FieldValidation> = {};
-    if (!discoveryObj) return res;
-    const endpointKeys = [
-      "issuer",
-      "authorization_endpoint",
-      "token_endpoint",
-      "userinfo_endpoint",
-      "jwks_uri",
-      "registration_endpoint",
-      "revocation_endpoint",
-      "introspection_endpoint",
-      "end_session_endpoint",
-    ];
-    for (const key of endpointKeys) {
-      const v = discoveryObj[key];
-      if (typeof v !== "string" || !v.trim()) {
-        res[key] = { status: "error", message: "Missing" };
-        continue;
-      }
-      try {
-        const u = new URL(v);
-        if (u.protocol !== "https:") {
-          res[key] = { status: "error", message: "Must be HTTPS" };
-        } else {
-          res[key] = { status: "pass", message: "HTTPS absolute URL" };
-        }
-      } catch {
-        res[key] = { status: "error", message: "Invalid URL" };
-      }
-    }
-    // Special: jwks_uri must also return a JWKS with keys[]
-    if (res.jwks_uri?.status === "pass" && jwksContentValidation) {
-      if (jwksContentValidation.status === "pass") {
-        res.jwks_uri = { status: "pass", message: jwksContentValidation.message };
-      } else if (jwksContentValidation.status === "pending") {
-        res.jwks_uri = { status: "pending", message: jwksContentValidation.message };
-      } else {
-        res.jwks_uri = { status: "error", message: jwksContentValidation.message };
-      }
-    }
-    return res;
-  }, [discoveryObj, jwksContentValidation]);
-
-  const capabilityValidation = useMemo(() => {
-    const res: Record<string, FieldValidation> = {};
-    if (!discoveryObj) return res;
-    const keys = [
-      "claims_supported",
-      "scopes_supported",
-      "code_challenge_methods_supported",
-      "response_types_supported",
-      "dpop_signing_alg_values_supported",
-      "grant_types_supported",
-      "id_token_signing_alg_values_supported",
-      "response_modes_supported",
-      "subject_types_supported",
-      "token_endpoint_auth_methods_supported",
-    ];
-    for (const key of keys) {
-      const v = discoveryObj[key];
-      if (v === undefined || v === null) {
-        res[key] = { status: "error", message: "Missing" };
-        continue;
-      }
-      if (!Array.isArray(v) || v.length === 0) {
-        res[key] = { status: "error", message: "Expected non-empty array" };
-        continue;
-      }
-      res[key] = { status: "pass", message: `${v.length} items` };
-    }
-    return res;
   }, [discoveryObj]);
 
   useEffect(() => {
