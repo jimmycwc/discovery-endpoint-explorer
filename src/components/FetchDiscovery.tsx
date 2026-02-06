@@ -699,10 +699,11 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
                 </pre>
               </div>
             )}
-            {lastAttemptedUrl && error.toLowerCase().includes("cors") && (
-              <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {lastAttemptedUrl && (error.toLowerCase().includes("cors") || error.toLowerCase().includes("cannot reach")) && (
+              <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                 <button
-                  onClick={() => window.open(lastAttemptedUrl, "_blank")}
+                  type="button"
+                  onClick={() => setInputMode("json")}
                   style={{
                     background: "#0b63e9",
                     color: "#fff",
@@ -715,55 +716,8 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
                     fontFamily: "Inter, sans-serif",
                   }}
                 >
-                  Open URL in New Tab
+                  Open JSON input
                 </button>
-                <button
-                  onClick={() => navigator.clipboard.writeText(lastAttemptedUrl)}
-                  style={{
-                    background: "#6c757d",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 4,
-                    padding: "8px 16px",
-                    fontSize: 13,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    fontFamily: "Inter, sans-serif",
-                  }}
-                >
-                  Copy URL
-                </button>
-              </div>
-            )}
-            {lastAttemptedUrl && error.toLowerCase().includes("cors") && (
-              <div
-                style={{
-                  marginTop: 12,
-                  padding: 10,
-                  background: "#fff3cd",
-                  border: "1px solid #ffc107",
-                  borderRadius: 4,
-                  fontSize: 13,
-                  color: "#856404",
-                }}
-              >
-                <strong>💡 Workarounds:</strong>
-                <ul style={{ marginTop: 6, marginBottom: 0, paddingLeft: 20 }}>
-                  <li>Click "Open URL in New Tab" to view the JSON directly in your browser</li>
-                  <li>
-                    Install a CORS browser extension (e.g.,{" "}
-                    <a
-                      href="https://chromewebstore.google.com/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: "#0b63e9" }}
-                    >
-                      Allow CORS
-                    </a>
-                  )
-                  </li>
-                  <li>Use a server-side proxy that adds CORS headers</li>
-                </ul>
               </div>
             )}
           </div>

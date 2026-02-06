@@ -128,11 +128,9 @@ export async function fetchDiscoveryDocument(url: string): Promise<FetchDiscover
     return {
       success: false,
       error: isCors
-        ? "Network/CORS error: Cannot reach the server"
+        ? "Cannot reach the server. Check the URL, or if the request was blocked by CORS, open it directly and paste the JSON into the JSON input field."
         : `Network error: ${message}`,
-      errorDetails: isCors
-        ? "The request was blocked by CORS policy or the server is unreachable. Try accessing the URL directly in your browser or configure CORS on the server."
-        : undefined,
+      errorDetails: undefined,
     };
   }
 }
