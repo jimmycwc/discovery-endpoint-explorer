@@ -563,7 +563,6 @@ const FetchDiscovery: React.FC<FetchDiscoveryProps> = ({
         color: "#495057",
         padding: "16px",
         width: "100%",
-        height: "100%",
         boxSizing: "border-box",
         gap: 24,
       }}
